@@ -307,7 +307,7 @@ jupyter notebook file.ipynb
 ### Step 5: Launch Streamlit App
 ```bash
 # Run the web application
-streamlit run app/app.py
+streamlit run app.py
 ```
 
 ### Access the Application
