@@ -541,9 +541,9 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 📧 Contact & Support
 
 For questions, suggestions, or collaboration:
-- GitHub Issues: [Create an issue](https://github.com/yourusername/charity-donor-prediction/issues)
 - Email: mit.p30082@gmail.com
 - LinkedIn: https://www.linkedin.com/in/mit-patel-ab3177320/
+- Twitter: https://x.com/mitpatel308
 
 ---
 
