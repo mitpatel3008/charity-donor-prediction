@@ -542,8 +542,8 @@ This project is open source and available under the [MIT License](LICENSE).
 
 For questions, suggestions, or collaboration:
 - GitHub Issues: [Create an issue](https://github.com/yourusername/charity-donor-prediction/issues)
-- Email: your.email@example.com
-- LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
+- Email: mit.p30082@gmail.com
+- LinkedIn: https://www.linkedin.com/in/mit-patel-ab3177320/
 
 ---
 
@@ -554,15 +554,6 @@ If you found this project helpful, please consider giving it a ⭐ on GitHub!
 ---
 
 **Built with ❤️ for effective charity donor identification and fundraising optimization**
-
----
-
-### Quick Links:
-- [Live Demo](#)
-- [Documentation](#)
-- [API Reference](#)
-- [Contributing Guidelines](#)
-- [Changelog](#)
 
 ---
 
