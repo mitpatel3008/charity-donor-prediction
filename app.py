@@ -18,12 +18,18 @@ st.markdown("---")
 # Load the trained model
 @st.cache_resource
 def load_model():
-    # Load your saved XGBoost model
     with open('best_donor_model_xgboost.pkl', 'rb') as f:
         model = pickle.load(f)
-    return model
 
-model = load_model()
+    with open('label_encoders.pkl', 'rb') as f:
+        label_encoders = pickle.load(f)
+
+    with open('model_threshold.pkl', 'rb') as f:
+        threshold = pickle.load(f)
+
+    return model, label_encoders, threshold
+
+model, label_encoders, threshold = load_model()
 
 # Create two columns for input
 col1, col2 = st.columns(2)
@@ -103,102 +109,51 @@ st.markdown("---")
 
 # Prediction button
 if st.button("Predict Donor Likelihood", type="primary", use_container_width=True):
-    
-    # Create encoding mappings
-    workclass_map = {"Private": 2, "Self-emp-not-inc": 4, "Self-emp-inc": 3, 
-                     "Federal-gov": 0, "Local-gov": 1, "State-gov": 5, 
-                     "Without-pay": 6, "Never-worked": 7}
-    
-    education_map = {"Bachelors": 9, "HS-grad": 11, "11th": 1, "Masters": 12, 
-                     "9th": 0, "Some-college": 13, "Assoc-acdm": 7, "Assoc-voc": 8,
-                     "7th-8th": 2, "Doctorate": 10, "Prof-school": 14, "5th-6th": 3,
-                     "10th": 4, "1st-4th": 5, "Preschool": 6, "12th": 15}
-    
-    marital_map = {"Married-civ-spouse": 2, "Never-married": 4, "Divorced": 0,
-                   "Separated": 5, "Widowed": 6, "Married-spouse-absent": 3, 
-                   "Married-AF-spouse": 1}
-    
-    occupation_map = {"Tech-support": 12, "Craft-repair": 2, "Other-service": 6,
-                      "Sales": 10, "Exec-managerial": 3, "Prof-specialty": 9,
-                      "Handlers-cleaners": 5, "Machine-op-inspct": 7, "Adm-clerical": 0,
-                      "Farming-fishing": 4, "Transport-moving": 13, "Priv-house-serv": 8,
-                      "Protective-serv": 11, "Armed-Forces": 1}
-    
-    relationship_map = {"Husband": 0, "Not-in-family": 1, "Own-child": 3,
-                        "Unmarried": 4, "Wife": 5, "Other-relative": 2}
-    
-    race_map = {"White": 4, "Black": 2, "Asian-Pac-Islander": 1,
-                "Amer-Indian-Eskimo": 0, "Other": 3}
-    
-    sex_map = {"Male": 1, "Female": 0}
-    
-    country_map = {"United-States": 39, "Cuba": 5, "Jamaica": 20, "India": 18,
-                   "Mexico": 24, "South": 31, "Puerto-Rico": 28}
-    
+
     education_num_map = {
         "Preschool": 1, "1st-4th": 2, "5th-6th": 3, "7th-8th": 4,
         "9th": 5, "10th": 6, "11th": 7, "12th": 8,
         "HS-grad": 9, "Some-college": 10, "Assoc-voc": 11, "Assoc-acdm": 12,
         "Bachelors": 13, "Masters": 14, "Prof-school": 15, "Doctorate": 16
     }
-    
-    # Create input data
+
     input_data = {
-        'age': age,
-        'workclass': workclass_map.get(workclass, 2),
-        'education': education_map.get(education, 9),
-        'education-num': education_num_map.get(education, 13),
-        'marital-status': marital_map.get(marital_status, 2),
-        'occupation': occupation_map.get(occupation, 3),
-        'relationship': relationship_map.get(relationship, 0),
-        'race': race_map.get(race, 4),
-        'sex': sex_map.get(sex, 1),
-        'capital-gain': capital_gain,
-        'capital-loss': capital_loss,
+        'age':            age,
+        'workclass':      int(label_encoders['workclass'].transform([workclass])[0]),
+        'education':      int(label_encoders['education'].transform([education])[0]),
+        'education-num':  education_num_map[education],
+        'marital-status': int(label_encoders['marital-status'].transform([marital_status])[0]),
+        'occupation':     int(label_encoders['occupation'].transform([occupation])[0]),
+        'relationship':   int(label_encoders['relationship'].transform([relationship])[0]),
+        'race':           int(label_encoders['race'].transform([race])[0]),
+        'sex':            int(label_encoders['sex'].transform([sex])[0]),
+        'capital-gain':   capital_gain,
+        'capital-loss':   capital_loss,
         'hours-per-week': hours_per_week,
-        'native-country': country_map.get(native_country, 39)
+        'native-country': int(label_encoders['native-country'].transform([native_country])[0]),
     }
-    
-    # Convert to DataFrame
+
     input_df = pd.DataFrame([input_data])
-    
-    # Make prediction
-    prediction = model.predict(input_df)
+
     prediction_proba = model.predict_proba(input_df)
-    
-    # Display results
+    prob_donor = float(prediction_proba[0][1])
+    prediction = 1 if prob_donor >= threshold else 0
+
     st.markdown("---")
     st.subheader("📊 Prediction Results")
-    
-    if prediction[0] == 1:
+
+    if prediction == 1:
         st.success("**HIGH POTENTIAL DONOR** (Income >$50K)")
-        confidence = prediction_proba[0][1] * 100
+        confidence = prob_donor * 100
         st.metric("Confidence Level", f"{confidence:.1f}%")
-        
         st.info("**Recommendation:** Add to priority donor contact list")
-        
-        # Convert to float before passing to progress
-        st.progress(float(prediction_proba[0][1]))
-        
+        st.progress(float(prob_donor))
     else:
         st.warning("❌ **LOW POTENTIAL DONOR** (Income ≤$50K)")
         confidence = prediction_proba[0][0] * 100
         st.metric("Confidence Level", f"{confidence:.1f}%")
-        
         st.info("**Recommendation:** May not be ideal for high-value donor campaigns")
-        
-        # Convert to float before passing to progress
         st.progress(float(prediction_proba[0][0]))
-    
-    # Show probability distribution
-    st.markdown("### Probability Distribution")
-    prob_col1, prob_col2 = st.columns(2)
-    
-    with prob_col1:
-        st.metric("≤$50K Probability", f"{prediction_proba[0][0]*100:.1f}%")
-    
-    with prob_col2:
-        st.metric(">$50K Probability", f"{prediction_proba[0][1]*100:.1f}%")
 
 # Footer
 st.markdown("---")
